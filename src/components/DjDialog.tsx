@@ -96,7 +96,7 @@ export function DjDialog() {
           </div>
           {status === 'unavailable' && (
             <p className="dj-note">
-              El DJ con IA funciona en la versión publicada, donde el servidor guarda la clave <code>ANTHROPIC_API_KEY</code>. En tu
+              El DJ con IA funciona en la versión publicada, donde el servidor guarda la clave de la IA. En tu
               computador con <code>npm run dev</code> no está disponible.
             </p>
           )}
