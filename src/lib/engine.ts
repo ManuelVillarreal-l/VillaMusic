@@ -80,14 +80,20 @@ export class Engine extends EventTarget {
     }
   }
 
+  /** Coloca el reproductor de YouTube dentro de un panel de la app (su propio espacio, sin flotar). */
+  attachStage(container: HTMLElement): void {
+    const stage = this.ensureStage();
+    if (stage.parentElement !== container) container.appendChild(stage);
+  }
+
   /** El contenedor del video se crea solo cuando hace falta (así el constructor no deja nada suelto). */
   private ensureStage(): HTMLDivElement {
     if (!this.stage) {
       this.stage = document.createElement('div');
       this.stage.className = 'yt-stage';
+      this.stage.hidden = true;
       this.host = document.createElement('div');
       this.stage.appendChild(this.host);
-      document.body.appendChild(this.stage);
       window.setInterval(() => {
         if (this.mode === 'youtube' && !this.paused) this.dispatchEvent(new Event('timeupdate'));
       }, 250);
@@ -156,7 +162,12 @@ export class Engine extends EventTarget {
   async playYouTube(videoId: string): Promise<void> {
     this.el.pause();
     this.mode = 'youtube';
-    this.ensureStage().hidden = false;
+    const stage = this.ensureStage();
+    stage.hidden = false;
+    if (!stage.isConnected) document.body.appendChild(stage); // respaldo si aún no hay panel
+    // Un instante para que el panel del video aparezca antes de cargar el video.
+    await new Promise((r) => setTimeout(r, 60));
+    if (this.mode !== 'youtube') return;
     const player = await this.getYouTube();
     if (this.mode !== 'youtube') return;
     player.setVolume(Math.round(this.vol * 100));

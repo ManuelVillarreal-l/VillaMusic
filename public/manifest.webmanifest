@@ -1,0 +1,15 @@
+{
+  "name": "VillaMusic",
+  "short_name": "VillaMusic",
+  "description": "Tu música, tus playlists y tu orden. Hecho en Pasto.",
+  "lang": "es",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#FBF7F1",
+  "theme_color": "#FBF7F1",
+  "icons": [
+    { "src": "/logo-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/logo-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

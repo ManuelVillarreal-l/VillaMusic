@@ -5,6 +5,9 @@ import type { ListNode, Placement } from './lib/DoublyLinkedList';
 import type { Song } from './types';
 import { CATALOG, DEFAULT_PLAYLISTS } from './lib/catalog';
 import { Engine } from './lib/engine';
+import { findVideo } from './lib/youtube';
+import { compact, encodeShare } from './lib/share';
+import type { ShareEntry } from './lib/share';
 import { forgetSongUrl, getSongUrl, prefetchSong } from './lib/audio';
 import { deleteBlob, saveBlob } from './lib/db';
 import { hash, isAudioFile, readAudioDuration, titleFromFilename, uid } from './lib/utils';
@@ -144,6 +147,17 @@ export interface Store {
   insertSong: (pid: string, song: Song, ref: ListNode<Song> | null, placement: Placement) => ListNode<Song> | null;
   addToPlaylist: (pid: string, song: Song) => void;
   moveNode: (pid: string, node: ListNode<Song>, ref: ListNode<Song> | null, placement: Placement) => void;
+  /** Inserta la canción justo después de la que suena (cola «Sonará después»). */
+  playNext: (song: Song) => void;
+  /** Mueve una canción de la playlist para que suene justo después de la actual. */
+  moveNext: (pid: string, node: ListNode<Song>) => void;
+  /** Crea una playlist nueva con estas canciones y la deja activa. */
+  importPlaylist: (name: string, songs: Song[]) => string;
+  sharePlaylist: (pid: string) => Promise<void>;
+  lyricsOpen: boolean;
+  toggleLyrics: () => void;
+  djOpen: boolean;
+  setDjOpen: (open: boolean) => void;
   removeNode: (pid: string, node: ListNode<Song>) => void;
   reversePlaylist: (pid: string) => void;
   sortPlaylist: (pid: string, key: SortKey) => void;
@@ -207,6 +221,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState<Toast | null>(null);
   const [lastAdded, setLastAdded] = useState<number | null>(null);
+  const [lyricsOpen, setLyricsOpen] = useState(false);
+  const [djOpen, setDjOpen] = useState(false);
 
   const audio = useMemo(() => new Engine(), []);
 
@@ -299,11 +315,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setCurrent({ pid, node });
       setIsLoading(true);
       try {
-        if (node.value.kind === 'youtube' && node.value.videoId) {
+        const song = node.value;
+        // Canciones del DJ: se busca su video en YouTube la primera vez que suenan.
+        if (!song.videoId && song.ytQuery) {
+          try {
+            const found = await findVideo(song.ytQuery);
+            if (token !== loadToken.current) return;
+            if (found) {
+              song.videoId = found.videoId;
+              if (found.duration) song.duration = found.duration;
+              touch();
+            }
+          } catch {
+            if (token !== loadToken.current) return;
+            /* sin YouTube: se usa la vista previa si existe */
+          }
+        }
+        if (song.videoId) {
           loadedNodeId.current = node.id;
-          await audio.playYouTube(node.value.videoId);
+          await audio.playYouTube(song.videoId);
         } else {
-          const url = await getSongUrl(node.value);
+          const url = await getSongUrl(song);
           if (token !== loadToken.current) return;
           await audio.playUrl(url);
           loadedNodeId.current = node.id;
@@ -322,7 +354,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (token === loadToken.current) setIsLoading(false);
       }
     },
-    [audio, ensureGraph, setCurrent, showToast],
+    [audio, ensureGraph, setCurrent, showToast, touch],
   );
 
   const playNode = useCallback(
@@ -574,6 +606,97 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [removeNodeInternal],
   );
 
+  const playNext = useCallback(
+    (song: Song) => {
+      const cur = currentRef.current;
+      const pid = cur?.pid ?? activeRef.current.id;
+      const pl = getPlaylist(pid);
+      if (!pl) return;
+      const after = cur && cur.node.owner === pl.list ? cur.node : null;
+      const head = pl.list.head;
+      const node = after
+        ? insertSong(pid, song, after, 'after')
+        : head
+          ? insertSong(pid, song, head, 'before')
+          : insertSong(pid, song, null, 'after');
+      if (!node) return;
+      showToast(after ? `«${song.title}» sonará después de «${after.value.title}»` : `«${song.title}» sonará primero en ${pl.name}`, () =>
+        removeNodeInternal(pid, node, false),
+      );
+    },
+    [activeRef, getPlaylist, insertSong, removeNodeInternal, showToast],
+  );
+
+  const moveNext = useCallback(
+    (pid: string, node: ListNode<Song>) => {
+      const pl = getPlaylist(pid);
+      if (!pl || node.owner !== pl.list) return;
+      const cur = currentRef.current;
+      const after = cur && cur.pid === pid && cur.node.owner === pl.list ? cur.node : null;
+      if (after === node) {
+        showToast('Esa canción ya está sonando');
+        return;
+      }
+      if (after && after.next === node) {
+        showToast('Esa canción ya suena después de la actual');
+        return;
+      }
+      if (after) moveNode(pid, node, after, 'after');
+      else if (pl.list.head && pl.list.head !== node) moveNode(pid, node, pl.list.head, 'before');
+      showToast(after ? `«${node.value.title}» sonará después de «${after.value.title}»` : `«${node.value.title}» pasó al principio`);
+    },
+    [getPlaylist, moveNode, showToast],
+  );
+
+  const importPlaylist = useCallback(
+    (name: string, songs: Song[]) => {
+      const id = uid();
+      const count = playlistsRef.current.length;
+      const pl = new Playlist(id, name.trim().slice(0, 60) || `Mi playlist ${count + 1}`, HUES[count % HUES.length]);
+      for (const song of songs) pl.list.append(song);
+      setPlaylists((prev) => [...prev, pl]);
+      setActiveId(id);
+      return id;
+    },
+    [playlistsRef],
+  );
+
+  const sharePlaylist = useCallback(
+    async (pid: string) => {
+      const pl = getPlaylist(pid);
+      if (!pl) return;
+      const ids = new Set(CATALOG.map((c) => c.id));
+      const entries: ShareEntry[] = [];
+      let skipped = 0;
+      for (const song of pl.list) {
+        const e = compact(song, ids);
+        if (e) entries.push(e);
+        else skipped++;
+      }
+      if (entries.length === 0) {
+        showToast('Agrega canciones del catálogo o de la web para poder compartirla');
+        return;
+      }
+      const code = await encodeShare({ n: pl.name, e: entries });
+      const link = `${location.origin}${location.pathname}#share=${code}`;
+      const note = skipped ? ` (${skipped} de tu música subida no se comparte)` : '';
+      try {
+        if (navigator.share && window.matchMedia('(max-width: 820px)').matches) {
+          await navigator.share({ title: `${pl.name} · VillaMusic`, url: link });
+          return;
+        }
+        await navigator.clipboard.writeText(link);
+        showToast(`Enlace copiado: cualquiera puede abrirlo${note}`);
+      } catch (err) {
+        if ((err as { name?: string }).name === 'AbortError') return;
+        window.prompt('Copia este enlace para compartir tu playlist:', link);
+      }
+    },
+    [getPlaylist, showToast],
+  );
+
+  const toggleLyrics = useCallback(() => setLyricsOpen((o) => !o), []);
+
   const reversePlaylist = useCallback(
     (pid: string) => {
       const pl = getPlaylist(pid);
@@ -752,6 +875,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     insertSong,
     addToPlaylist,
     moveNode,
+    playNext,
+    moveNext,
+    importPlaylist,
+    sharePlaylist,
+    lyricsOpen,
+    toggleLyrics,
+    djOpen,
+    setDjOpen,
     removeNode,
     reversePlaylist,
     sortPlaylist,

@@ -4,6 +4,11 @@ import { Sidebar } from './components/Sidebar';
 import { PlaylistView } from './components/PlaylistView';
 import { Discover } from './components/Discover';
 import { PlayerBar } from './components/PlayerBar';
+import { VideoPanel } from './components/VideoPanel';
+import { LyricsPanel } from './components/LyricsPanel';
+import { DjDialog } from './components/DjDialog';
+import { ShareImport } from './components/ShareImport';
+import { isVideoSong } from './types';
 import { ToastHost } from './components/Toast';
 import { cls } from './lib/utils';
 
@@ -86,15 +91,21 @@ function useShortcuts() {
 }
 
 export default function App() {
+  const s = useStore();
   const [discoverOpen, setDiscoverOpen] = useState(false);
   useShortcuts();
+  const hasVideo = isVideoSong(s.current?.node.value);
 
   return (
-    <div className={cls('app', discoverOpen && 'discover-open')}>
+    <div className={cls('app', discoverOpen && 'discover-open', hasVideo && 'has-video')}>
       <Sidebar />
       <PlaylistView onOpenDiscover={() => setDiscoverOpen(true)} />
+      <VideoPanel />
       <Discover open={discoverOpen} onClose={() => setDiscoverOpen(false)} />
+      <LyricsPanel />
       <PlayerBar />
+      <DjDialog />
+      <ShareImport />
       <ToastHost />
     </div>
   );

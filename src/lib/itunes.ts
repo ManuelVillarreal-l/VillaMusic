@@ -18,8 +18,8 @@ interface ITunesTrack {
   artworkUrl100?: string;
 }
 
-function url(term: string, extra = ''): string {
-  const q = new URLSearchParams({ term, media: 'music', entity: 'song', limit: '30', country: 'CO' });
+function url(term: string, limit = 30, extra = ''): string {
+  const q = new URLSearchParams({ term, media: 'music', entity: 'song', limit: String(limit), country: 'CO' });
   return `${ENDPOINT}?${q.toString()}${extra}`;
 }
 
@@ -72,15 +72,15 @@ export function toSong(t: ITunesTrack): Song | null {
   };
 }
 
-export async function searchSongs(term: string, signal?: AbortSignal): Promise<Song[]> {
+export async function searchSongs(term: string, signal?: AbortSignal, limit = 30): Promise<Song[]> {
   let data: { results?: ITunesTrack[] };
   try {
-    const res = await fetch(url(term), { signal });
+    const res = await fetch(url(term, limit), { signal });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     data = (await res.json()) as { results?: ITunesTrack[] };
   } catch (err) {
     if ((err as { name?: string }).name === 'AbortError') throw err;
-    data = await jsonp(url(term), signal);
+    data = await jsonp(url(term, limit), signal);
   }
   const seen = new Set<string>();
   const out: Song[] = [];

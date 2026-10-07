@@ -133,3 +133,10 @@ export async function searchYouTube(term: string, key: string, signal?: AbortSig
     };
   });
 }
+
+/** Busca el video de una canción (para las que arma el DJ). Devuelve null si no hay resultados. */
+export async function findVideo(query: string, signal?: AbortSignal): Promise<{ videoId: string; duration: number } | null> {
+  const results = await searchYouTube(query, getYouTubeKey(), signal);
+  const first = results.find((s) => s.videoId);
+  return first?.videoId ? { videoId: first.videoId, duration: first.duration } : null;
+}

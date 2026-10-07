@@ -3,7 +3,8 @@ import { useStore } from '../store';
 import type { AccentName } from '../store';
 import { Logo, Wordmark } from './Logo';
 import { Equalizer, PlaylistCover } from './Cover';
-import { IconPlus, IconUpload } from './Icons';
+import { IconDownload, IconPlus, IconSpark, IconUpload } from './Icons';
+import { useInstall } from '../lib/pwa';
 import { cls } from '../lib/utils';
 
 const ACCENTS: { id: AccentName; label: string; a: string; b: string }[] = [
@@ -16,6 +17,7 @@ export function Sidebar() {
   const s = useStore();
   const fileRef = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState<string | null>(null);
+  const install = useInstall();
 
   return (
     <aside className="sidebar card">
@@ -66,9 +68,17 @@ export function Sidebar() {
       </nav>
 
       <div className="side-foot">
+        <button className="btn btn-primary btn-block dj-btn" onClick={() => s.setDjOpen(true)}>
+          <IconSpark size={18} /> DJ con IA
+        </button>
         <button className="btn btn-soft btn-block" onClick={() => fileRef.current?.click()}>
           <IconUpload size={18} /> Subir mi música
         </button>
+        {install.canInstall && (
+          <button className="btn btn-soft btn-block" onClick={() => void install.install()}>
+            <IconDownload size={18} /> Instalar app
+          </button>
+        )}
         <input
           ref={fileRef}
           type="file"

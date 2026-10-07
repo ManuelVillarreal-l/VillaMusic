@@ -5,12 +5,13 @@ import { Cover } from './Cover';
 import { IconChevronDown, IconLink } from './Icons';
 import { cls } from '../lib/utils';
 
-function ChainLink() {
+function ChainLink({ live }: { live?: boolean }) {
   return (
-    <svg className="chain-link" width="42" height="30" viewBox="0 0 42 30" aria-hidden="true">
+    <svg className={cls('chain-link', live && 'is-live')} width="42" height="30" viewBox="0 0 42 30" aria-hidden="true">
       <g className="l-next">
         <path d="M4 10H35" />
         <path d="M30 5.5 36 10l-6 4.5" />
+        {live && <path className="l-fill" d="M4 10H35" pathLength="1" />}
       </g>
       <g className="l-prev">
         <path d="M38 21H7" />
@@ -61,6 +62,21 @@ export function ListDiagram({ playlist }: { playlist: Playlist }) {
     track.scrollTo({ left: el.offsetLeft - track.clientWidth / 2 + el.offsetWidth / 2, behavior: 'smooth' });
   }, [cur?.id, open, nodes.length]);
 
+  // Progreso de la canción actual → variable CSS que llena la flecha hacia el siguiente nodo.
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!open || !cur || !track) return;
+    let raf = 0;
+    const tick = () => {
+      const d = s.audio.duration;
+      const p = Number.isFinite(d) && d > 0 ? Math.min(1, s.audio.currentTime / d) : 0;
+      track.style.setProperty('--prog', p.toFixed(4));
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [cur?.id, open, s.audio]);
+
   return (
     <section className={cls('chain', !open && 'is-closed')}>
       <header className="chain-head">
@@ -110,7 +126,7 @@ export function ListDiagram({ playlist }: { playlist: Playlist }) {
                 const isCur = cur === n;
                 return (
                   <Fragment key={n.id}>
-                    {i > 0 && <ChainLink />}
+                    {i > 0 && <ChainLink live={!!cur && nodes[i - 1] === cur} />}
                     <button
                       data-node={n.id}
                       className={cls('node', isCur && 'is-current', s.lastAdded === n.id && 'just-added')}

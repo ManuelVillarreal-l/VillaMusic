@@ -3,7 +3,7 @@ import { useStore } from '../store';
 import type { Song } from '../types';
 import { GENRES } from '../lib/catalog';
 import { Cover } from './Cover';
-import { IconClose, IconMusic, IconPause, IconPlay, IconPlus, IconSearch, IconTrash, IconUpload } from './Icons';
+import { IconClose, IconQueue, IconMusic, IconPause, IconPlay, IconPlus, IconSearch, IconTrash, IconUpload } from './Icons';
 import { searchSongs } from '../lib/itunes';
 import { searchAudius } from '../lib/audius';
 import { YouTubeKeyError, YouTubeNoServer, YouTubeQuota, getYouTubeKey, searchYouTube, setYouTubeKey } from '../lib/youtube';
@@ -167,6 +167,9 @@ export function Discover({ open, onClose }: { open: boolean; onClose: () => void
           <IconTrash size={17} />
         </button>
       )}
+      <button className="icon-btn d-next" title="Sonará después" aria-label={`Reproducir ${song.title} a continuación`} onClick={() => s.playNext(song)}>
+        <IconQueue size={17} />
+      </button>
       <button
         className="icon-btn d-add"
         title={`Agregar al final de «${s.active.name}»`}
@@ -256,7 +259,7 @@ export function Discover({ open, onClose }: { open: boolean; onClose: () => void
           </div>
           <p className="web-hint">
             {source === 'youtube'
-              ? 'Cualquier canción del mundo, completa. Se reproduce con el reproductor oficial de YouTube (aparece abajo a la derecha).'
+              ? 'Cualquier canción del mundo, completa. El video se ve en su propio panel, sin tapar nada.'
               : source === 'audius'
                 ? 'Música completa de artistas independientes (Audius), gratis y legal.'
                 : 'Los éxitos comerciales solo permiten 30 s por derechos de autor. Para oírlos completos, sube tus MP3 en «Mi música».'}

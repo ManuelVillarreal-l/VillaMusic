@@ -34,6 +34,13 @@ export interface Song {
   streamUrl?: string;
   /** Solo kind 'youtube': id del video. */
   videoId?: string;
+  /** Texto para buscar el video en YouTube cuando se reproduzca (canciones armadas por el DJ). */
+  ytQuery?: string;
   /** Solo kind 'web' o 'youtube': portada real. */
   artwork?: string;
+}
+
+/** ¿Esta canción se reproduce con el video de YouTube? */
+export function isVideoSong(song: Song | null | undefined): boolean {
+  return !!song && (song.kind === 'youtube' || !!song.videoId);
 }

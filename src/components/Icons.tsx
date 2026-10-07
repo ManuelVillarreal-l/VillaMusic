@@ -244,3 +244,48 @@ export const IconDots = solid(
     <circle cx="19" cy="12" r="1.8" />
   </>,
 );
+
+export const IconQueue = stroke(
+  <>
+    <path d="M3 6h12" />
+    <path d="M3 12h8" />
+    <path d="M3 18h8" />
+    <path d="m15 13 6 4-6 4z" fill="currentColor" />
+  </>,
+);
+
+export const IconShare = stroke(
+  <>
+    <circle cx="18" cy="5" r="2.6" />
+    <circle cx="6" cy="12" r="2.6" />
+    <circle cx="18" cy="19" r="2.6" />
+    <path d="m8.3 10.7 7.4-4.3" />
+    <path d="m8.3 13.3 7.4 4.3" />
+  </>,
+);
+
+export const IconSpark = stroke(
+  <>
+    <path d="M12 3c.6 4.6 2.4 6.4 7 7-4.6.6-6.4 2.4-7 7-.6-4.6-2.4-6.4-7-7 4.6-.6 6.4-2.4 7-7Z" />
+    <path d="M19 15.5c.2 1.6.9 2.3 2.5 2.5-1.6.2-2.3.9-2.5 2.5-.2-1.6-.9-2.3-2.5-2.5 1.6-.2 2.3-.9 2.5-2.5Z" />
+  </>,
+);
+
+export const IconLyrics = stroke(
+  <>
+    <path d="M4 6h16" />
+    <path d="M4 11h10" />
+    <path d="M4 16h7" />
+    <path d="M17 13v6.2" />
+    <circle cx="15.2" cy="19.3" r="1.8" />
+    <path d="M17 13c1.6 0 3 .8 3 2.6" />
+  </>,
+);
+
+export const IconDownload = stroke(
+  <>
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <path d="m7 10 5 5 5-5" />
+    <path d="M12 15V3" />
+  </>,
+);

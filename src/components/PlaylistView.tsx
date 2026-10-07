@@ -15,6 +15,8 @@ import {
   IconShuffle,
   IconSort,
   IconSwap,
+  IconQueue,
+  IconShare,
   IconTrash,
 } from './Icons';
 import { cls, fmtLong, fmtTime } from '../lib/utils';
@@ -32,6 +34,7 @@ interface RowProps {
   flash: boolean;
   onPlay: () => void;
   onRemove: () => void;
+  onQueue: () => void;
   onDragStart: (e: DragEvent) => void;
   onDragEnd: () => void;
   onDragOver: (e: DragEvent) => void;
@@ -81,10 +84,15 @@ function SongRow(p: RowProps) {
       <span className="row-genre">
         <span className="chip">{song.genre}</span>
       </span>
-      <span className="row-dur">{fmtTime(song.duration)}</span>
-      <button className="icon-btn row-remove" onClick={p.onRemove} title="Quitar de la playlist" aria-label={`Quitar ${song.title}`}>
-        <IconTrash size={17} />
-      </button>
+      <span className="row-dur">{song.duration ? fmtTime(song.duration) : '—'}</span>
+      <span className="row-actions">
+        <button className="icon-btn row-queue" onClick={p.onQueue} title="Sonará después" aria-label={`Reproducir ${song.title} a continuación`}>
+          <IconQueue size={17} />
+        </button>
+        <button className="icon-btn row-remove" onClick={p.onRemove} title="Quitar de la playlist" aria-label={`Quitar ${song.title}`}>
+          <IconTrash size={17} />
+        </button>
+      </span>
     </div>
   );
 }
@@ -257,6 +265,9 @@ export function PlaylistView({ onOpenDiscover }: { onOpenDiscover: () => void })
             >
               <IconShuffle size={20} />
             </button>
+            <button className="icon-btn icon-btn-lg" onClick={() => void s.sharePlaylist(pl.id)} disabled={count === 0} title="Compartir por enlace" aria-label="Compartir playlist">
+              <IconShare size={20} />
+            </button>
             <div className="menu-wrap">
               <button
                 className="btn btn-soft"
@@ -342,6 +353,7 @@ export function PlaylistView({ onOpenDiscover }: { onOpenDiscover: () => void })
             flash={s.lastAdded === node.id}
             onPlay={() => (s.current?.node === node ? s.togglePlay() : s.playNode(pl.id, node))}
             onRemove={() => s.removeNode(pl.id, node)}
+            onQueue={() => s.moveNext(pl.id, node)}
             onDragStart={(e) => {
               s.dragRef.current = { kind: 'node', pid: pl.id, node };
               e.dataTransfer.effectAllowed = 'copyMove';

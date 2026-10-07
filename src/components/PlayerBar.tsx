@@ -5,6 +5,7 @@ import { Cover } from './Cover';
 import { Visualizer } from './Visualizer';
 import {
   IconForward,
+  IconLyrics,
   IconMusic,
   IconPause,
   IconPlay,
@@ -87,6 +88,16 @@ export function PlayerBar() {
             </button>
           )}
         </div>
+        <button
+          className={cls('icon-btn lyrics-btn', s.lyricsOpen && 'is-on')}
+          onClick={s.toggleLyrics}
+          disabled={!song}
+          title="Letra sincronizada"
+          aria-label="Letra de la canción"
+          aria-pressed={s.lyricsOpen}
+        >
+          <IconLyrics size={20} />
+        </button>
       </div>
 
       <div className="transport">
