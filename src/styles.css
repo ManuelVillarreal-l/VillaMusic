@@ -1007,6 +1007,8 @@ p {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 20px 14px 8px;
   gap: 12px;
 }
@@ -1119,8 +1121,8 @@ p {
 }
 
 .d-list {
-  flex: 1;
-  min-height: 0;
+  flex: 1 1 0;
+  min-height: min(260px, 45vh); /* con el video arriba, los resultados siempre tienen espacio */
   overflow-y: auto;
   list-style: none;
   margin: 0;
@@ -1978,4 +1980,19 @@ p {
     bottom: 176px;
     z-index: 35;
   }
+}
+
+/* Mientras se busca, se esconden los textos de ayuda para dar espacio a los resultados */
+.discover.has-query .d-head p,
+.discover.has-query .web-hint,
+.discover.has-query [aria-label='Sugerencias'] {
+  display: none;
+}
+/* La barra de búsqueda se queda arriba al desplazarse por los resultados */
+.discover > .search {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  flex: none;
+  box-shadow: 0 0 0 10px var(--surface);
 }

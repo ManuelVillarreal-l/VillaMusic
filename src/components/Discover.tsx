@@ -20,6 +20,7 @@ export function Discover({ open, onClose }: { open: boolean; onClose: () => void
   const s = useStore();
   const [tab, setTab] = useState<Tab>('catalog');
   const [query, setQuery] = useState('');
+  const listRef = useRef<HTMLUListElement>(null);
   const [genre, setGenre] = useState('Todos');
   const [fileOver, setFileOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -28,6 +29,11 @@ export function Discover({ open, onClose }: { open: boolean; onClose: () => void
   const [keyDraft, setKeyDraft] = useState('');
   const [webItems, setWebItems] = useState<Song[]>([]);
   const [webStatus, setWebStatus] = useState<WebStatus>('idle');
+
+  // Al llegar resultados nuevos, se lleva la lista a la vista (sirve cuando el video ocupa espacio).
+  useEffect(() => {
+    if (webStatus === 'ok') listRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [webStatus]);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const previewRef = useRef<HTMLAudioElement | null>(null);
 
@@ -183,7 +189,7 @@ export function Discover({ open, onClose }: { open: boolean; onClose: () => void
 
   return (
     <aside
-      className={cls('discover card', open && 'is-open', fileOver && 'is-file-over')}
+      className={cls('discover card', open && 'is-open', fileOver && 'is-file-over', query.trim() && 'has-query')}
       onDragOver={(e) => {
         if (hasFiles(e)) {
           e.preventDefault();
@@ -337,7 +343,7 @@ export function Discover({ open, onClose }: { open: boolean; onClose: () => void
         }}
       />
 
-      <ul className="d-list">
+      <ul className="d-list" ref={listRef}>
         {items.map(renderItem)}
         {tab === 'web' && webStatus === 'loading' && (
           <li className="d-loading">
