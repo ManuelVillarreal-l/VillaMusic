@@ -11,6 +11,7 @@ import { ShareImport } from './components/ShareImport';
 import { isVideoSong } from './types';
 import { ToastHost } from './components/Toast';
 import { cls } from './lib/utils';
+import { useBackClose } from './lib/useBackClose';
 
 /**
  * Con el teclado (Tab) un botón enfocado se activa con Espacio, como siempre.
@@ -94,11 +95,14 @@ export default function App() {
   const s = useStore();
   const [discoverOpen, setDiscoverOpen] = useState(false);
   useShortcuts();
+  useBackClose(discoverOpen, () => setDiscoverOpen(false));
+  useBackClose(s.lyricsOpen, s.toggleLyrics);
+  useBackClose(s.djOpen, () => s.setDjOpen(false));
   const hasVideo = isVideoSong(s.current?.node.value);
 
   return (
     <div className={cls('app', discoverOpen && 'discover-open', hasVideo && 'has-video')}>
-      <Sidebar />
+      <Sidebar onOpenDiscover={() => setDiscoverOpen(true)} />
       <PlaylistView onOpenDiscover={() => setDiscoverOpen(true)} />
       <VideoPanel />
       <Discover open={discoverOpen} onClose={() => setDiscoverOpen(false)} />

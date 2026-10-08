@@ -21,8 +21,13 @@ export function useInstall() {
       window.removeEventListener('appinstalled', onInstalled);
     };
   }, []);
+  // iPhone/iPad no avisan: la instalación es manual (Compartir → Añadir a pantalla de inicio).
+  const ua = navigator.userAgent;
+  const ios = /iPad|iPhone|iPod/.test(ua) || (ua.includes('Mac') && navigator.maxTouchPoints > 1);
+  const standalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as { standalone?: boolean }).standalone === true;
   return {
-    canInstall: !!evt,
+    canInstall: !!evt || (ios && !standalone),
+    needsHint: !evt && ios && !standalone,
     install: async () => {
       if (!evt) return;
       await evt.prompt();

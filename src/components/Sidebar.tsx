@@ -3,7 +3,7 @@ import { useStore } from '../store';
 import type { AccentName } from '../store';
 import { Logo, Wordmark } from './Logo';
 import { Equalizer, PlaylistCover } from './Cover';
-import { IconDownload, IconPlus, IconSpark, IconUpload } from './Icons';
+import { IconDownload, IconPlus, IconSearch, IconSpark, IconUpload } from './Icons';
 import { useInstall } from '../lib/pwa';
 import { cls } from '../lib/utils';
 
@@ -13,11 +13,15 @@ const ACCENTS: { id: AccentName; label: string; a: string; b: string }[] = [
   { id: 'carnaval', label: 'Carnaval', a: '#7C5CFF', b: '#FF7AC6' },
 ];
 
-export function Sidebar() {
+export function Sidebar({ onOpenDiscover }: { onOpenDiscover: () => void }) {
   const s = useStore();
   const fileRef = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState<string | null>(null);
   const install = useInstall();
+  const onInstall = () => {
+    if (install.needsHint) s.showToast('En iPhone: toca Compartir y luego «Añadir a pantalla de inicio»');
+    else void install.install();
+  };
 
   return (
     <aside className="sidebar card">
@@ -67,6 +71,20 @@ export function Sidebar() {
         })}
       </nav>
 
+      <div className="side-quick">
+        <button className="btn btn-primary" onClick={() => s.setDjOpen(true)} aria-label="DJ con IA">
+          <IconSpark size={17} /> DJ
+        </button>
+        <button className="btn btn-soft" onClick={onOpenDiscover} aria-label="Buscar canciones">
+          <IconSearch size={17} /> Buscar
+        </button>
+        {install.canInstall && (
+          <button className="btn btn-soft" onClick={onInstall} aria-label="Instalar app">
+            <IconDownload size={17} />
+          </button>
+        )}
+      </div>
+
       <div className="side-foot">
         <button className="btn btn-primary btn-block dj-btn" onClick={() => s.setDjOpen(true)}>
           <IconSpark size={18} /> DJ con IA
@@ -75,7 +93,7 @@ export function Sidebar() {
           <IconUpload size={18} /> Subir mi música
         </button>
         {install.canInstall && (
-          <button className="btn btn-soft btn-block" onClick={() => void install.install()}>
+          <button className="btn btn-soft btn-block" onClick={onInstall}>
             <IconDownload size={18} /> Instalar app
           </button>
         )}
